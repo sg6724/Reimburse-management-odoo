@@ -3,7 +3,8 @@ import { getToken } from "next-auth/jwt";
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const token = await getToken({ req: request, secret: process.env.AUTH_SECRET });
+  const authSecret = process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET;
+  const token = await getToken({ req: request, secret: authSecret });
   const isLoggedIn = !!token;
 
   const publicPaths = ["/login", "/signup", "/forgot-password"];

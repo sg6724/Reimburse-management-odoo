@@ -37,7 +37,7 @@ hooks/use-users.ts, hooks/use-currencies.ts
 - Auth.js v5 config: credentials provider, Prisma adapter, httpOnly cookie sessions
 - Admin signup → auto-creates Company + sets base currency from country selection
 - Admin user management table: create user, assign role, assign manager, send password email
-- Resend client setup in `lib/mail.ts` + all email helper functions (Person B & C call these, never write them)
+- Nodemailer client setup in `lib/mail.ts` + all email helper functions (Person B & C call these, never write them)
 - `components/ui/` primitive library — ship this in the **very first PR** so B and C can build on it
 - Dashboard shell layout (sidebar + navbar) — ship alongside UI primitives
 - Currency API proxies (`/api/currencies` + `/api/currencies/convert`)
@@ -96,7 +96,7 @@ hooks/use-approvals.ts
 - Post-action: row becomes read-only, buttons disappear
 - Approval log component (`approver · status · comment · timestamp`) — rendered on expense detail by Person B's `[id]/page.tsx`
 - Two pre-seeded rules via `prisma/seed.ts`: "Simple Manager Approval" and "Finance + Manager"
-- All Resend calls for approval events: call helpers from `lib/mail.ts` (Person A writes the templates, C only calls them)
+- All Nodemailer calls for approval events: call helpers from `lib/mail.ts` (Person A writes the templates, C only calls them)
 
 > **Key constraint:** Logic never lives inline in route files — route handlers call `lib/approval-engine.ts` exclusively.
 
@@ -139,7 +139,7 @@ Final,   PR 6 — Person B: approval-log integration into expense detail  (depen
 | Area | Person A | Person B | Person C |
 |------|:--------:|:--------:|:--------:|
 | Auth.js v5 setup, login, signup | ✅ | | |
-| Forgot password + Resend setup (`lib/mail.ts`) | ✅ | | |
+| Forgot password + Nodemailer setup (`lib/mail.ts`) | ✅ | | |
 | Admin user management | ✅ | | |
 | Admin category management | ✅ | | |
 | Currency API proxy | ✅ setup | uses | uses |

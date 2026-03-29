@@ -6,19 +6,40 @@ export function useUsers() {
   const [users, setUsers] = useState<UserWithManager[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const refetch = useCallback(() => {
+  const refetch = useCallback(async () => {
     setLoading(true);
-    fetch("/api/users")
-      .then((r) => r.json())
-      .then((data) => {
-        setUsers(data);
-        setLoading(false);
-      });
+    try {
+      const response = await fetch("/api/users");
+      const data = await response.json();
+      setUsers(data);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => {
-    refetch();
-  }, [refetch]);
+    let canceled = false;
+
+    async function loadInitialUsers() {
+      try {
+        const response = await fetch("/api/users");
+        const data = await response.json();
+        if (!canceled) {
+          setUsers(data);
+        }
+      } finally {
+        if (!canceled) {
+        setLoading(false);
+        }
+      }
+    }
+
+    void loadInitialUsers();
+
+    return () => {
+      canceled = true;
+    };
+  }, []);
 
   return { users, loading, refetch };
 }
