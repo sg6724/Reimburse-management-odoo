@@ -89,6 +89,7 @@ model Expense {
   amount                Float
   currencyCode          String
   amountInCompanyCurrency Float
+  exchangeRateUsed      Float?
   categoryId            String
   description           String?
   paidById              String?
