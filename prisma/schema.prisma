@@ -1,5 +1,5 @@
+// prisma/schema.prisma
 // Owner: Shared — run migrations on main branch only
-// TODO: Define Prisma schema
 
 generator client {
   provider = "prisma-client-js"
@@ -7,5 +7,156 @@ generator client {
 
 datasource db {
   provider = "sqlite"
-  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  MANAGER
+  EMPLOYEE
+}
+
+enum ExpenseStatus {
+  DRAFT
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum WorkflowRuleType {
+  ALL
+  PERCENTAGE
+  SPECIFIC_APPROVER
+  HYBRID
+}
+
+enum ApprovalDecision {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model Company {
+  id           String   @id @default(cuid())
+  name         String
+  country      String
+  currencyCode String
+  createdAt    DateTime @default(now())
+
+  users             User[]
+  categories        ExpenseCategory[]
+  expenses          Expense[]
+  approvalWorkflows ApprovalWorkflow[]
+}
+
+model User {
+  id                 String   @id @default(cuid())
+  companyId          String
+  name               String
+  email              String   @unique
+  passwordHash       String
+  role               Role
+  managerId          String?
+  mustChangePassword Boolean  @default(false)
+  createdAt          DateTime @default(now())
+
+  company       Company  @relation(fields: [companyId], references: [id])
+  manager       User?    @relation("ManagerEmployee", fields: [managerId], references: [id])
+  directReports User[]   @relation("ManagerEmployee")
+
+  submittedExpenses    Expense[]          @relation("EmployeeExpenses")
+  paidExpenses         Expense[]          @relation("PaidByExpenses")
+  approvalSteps        ApprovalWorkflowStep[]
+  expenseApprovals     ExpenseApproval[]
+  specificApproverFor  ApprovalWorkflow[] @relation("SpecificApprover")
+}
+
+model ExpenseCategory {
+  id        String   @id @default(cuid())
+  companyId String
+  name      String
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  company  Company   @relation(fields: [companyId], references: [id])
+  expenses Expense[]
+}
+
+model Expense {
+  id                    String        @id @default(cuid())
+  companyId             String
+  employeeId            String
+  title                 String
+  amount                Float
+  currencyCode          String
+  amountInCompanyCurrency Float
+  categoryId            String
+  description           String?
+  paidById              String?
+  remarks               String?
+  date                  DateTime
+  status                ExpenseStatus @default(DRAFT)
+  receiptUrl            String?
+  workflowId            String?
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
+
+  company   Company         @relation(fields: [companyId], references: [id])
+  employee  User            @relation("EmployeeExpenses", fields: [employeeId], references: [id])
+  category  ExpenseCategory @relation(fields: [categoryId], references: [id])
+  paidBy    User?           @relation("PaidByExpenses", fields: [paidById], references: [id])
+  workflow  ApprovalWorkflow? @relation(fields: [workflowId], references: [id])
+  approvals ExpenseApproval[]
+
+  @@index([companyId])
+  @@index([employeeId])
+  @@index([status])
+}
+
+model ApprovalWorkflow {
+  id                  String           @id @default(cuid())
+  companyId           String
+  name                String
+  isActive            Boolean          @default(false)
+  isSequential        Boolean          @default(false)
+  managerApproverFirst Boolean         @default(false)
+  ruleType            WorkflowRuleType @default(ALL)
+  percentageThreshold Int?
+  specificApproverId  String?
+  createdAt           DateTime         @default(now())
+
+  company          Company                @relation(fields: [companyId], references: [id])
+  specificApprover User?                  @relation("SpecificApprover", fields: [specificApproverId], references: [id])
+  steps            ApprovalWorkflowStep[]
+  expenses         Expense[]
+}
+
+model ApprovalWorkflowStep {
+  id         String @id @default(cuid())
+  workflowId String
+  stepOrder  Int
+  approverId String
+  label      String
+
+  workflow  ApprovalWorkflow @relation(fields: [workflowId], references: [id])
+  approver  User             @relation(fields: [approverId], references: [id])
+  approvals ExpenseApproval[]
+}
+
+model ExpenseApproval {
+  id               String           @id @default(cuid())
+  expenseId        String
+  workflowStepId   String?
+  approverId       String
+  status           ApprovalDecision @default(PENDING)
+  comment          String?
+  isManagerApproval Boolean         @default(false)
+  createdAt        DateTime         @default(now())
+  decidedAt        DateTime?
+
+  expense      Expense               @relation(fields: [expenseId], references: [id])
+  workflowStep ApprovalWorkflowStep? @relation(fields: [workflowStepId], references: [id])
+  approver     User                  @relation(fields: [approverId], references: [id])
+
+  @@index([expenseId])
+  @@index([approverId])
 }
