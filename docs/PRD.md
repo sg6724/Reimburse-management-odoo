@@ -3,7 +3,7 @@
 
 **Version:** 2.0 (Final)
 **Date:** March 2026
-**Tech Stack:** Next.js App Router · Auth.js v5 · Prisma ORM · SQLite · TypeScript · Resend · Tesseract.js
+**Tech Stack:** Next.js App Router · Auth.js v5 · Prisma ORM · SQLite · TypeScript · Nodemailer · Tesseract.js
 **Brand:** Linen Cloud `#F8F9ED` (Primary) · Plum Wine `#5E4075` (Secondary)
 
 ---
@@ -25,7 +25,7 @@ Companies struggle with manual expense reimbursement processes that are time-con
 | Conditional rules (%, specific approver, hybrid) | ✅ |
 | Multi-currency with real-time conversion | ✅ |
 | OCR receipt scanning (Tesseract.js, client-side) | ✅ |
-| Email notifications via Resend | ✅ |
+| Email notifications via Nodemailer | ✅ |
 | Admin-configurable expense categories | ✅ |
 | Audit log / approval history | ✅ |
 | 2 pre-seeded default approval rules per company | ✅ |
@@ -64,7 +64,7 @@ Fields: Name · Email · Password · Confirm Password · Country (dropdown via `
 Fields: Email · Password
 
 - Standard credentials login.
-- "Forgot Password" → Resend emails a randomly generated password; user must change it on first login after reset.
+- "Forgot Password" → Nodemailer emails a randomly generated password; user must change it on first login after reset.
 
 #### User Management (Admin)
 
@@ -76,11 +76,11 @@ Admin manages users from a table UI:
 | Role | Dropdown: Employee / Manager |
 | Manager | Dynamic dropdown; initially pulled from user record; admin can override |
 | Email | Required for login |
-| Send Password | Button — triggers Resend email with auto-generated password |
+| Send Password | Button — triggers Nodemailer email with auto-generated password |
 
 ---
 
-### 4.2 Email Notifications (Resend)
+### 4.2 Email Notifications (Nodemailer)
 
 | Trigger | Recipient |
 |---------|-----------|
@@ -91,7 +91,7 @@ Admin manages users from a table UI:
 | Expense fully approved (final stage) | Employee (submitter) |
 | Required approver rejects → auto-reject | Employee (submitter) |
 
-All email templates live in `lib/mail.ts`. Person A sets up the Resend client; Persons B and C call the helper functions.
+All email templates live in `lib/mail.ts`. Person A sets up the Nodemailer client; Persons B and C call the helper functions.
 
 ---
 
@@ -180,7 +180,7 @@ Admin can modify these or create new ones. Only **one rule is active** at a time
 
 1. If "Is Manager Approver" checked → manager receives request first.
 2. Only after Step N acts does Step N+1 get notified.
-3. If a **Required** approver rejects → expense **auto-rejected** immediately; chain stops; Resend fires.
+3. If a **Required** approver rejects → expense **auto-rejected** immediately; chain stops; Nodemailer fires.
 
 #### Parallel Flow (Approvers Sequence = OFF)
 
@@ -252,7 +252,7 @@ POST   /api/auth/[...nextauth]              # Auth.js v5 catch-all handler
 GET    /api/users                           # Admin: list users
 POST   /api/users                           # Admin: create user
 PATCH  /api/users/[id]                      # Admin: update role/manager
-POST   /api/users/[id]/send-password        # Admin: trigger Resend password email
+POST   /api/users/[id]/send-password        # Admin: trigger Nodemailer password email
 
 GET    /api/expenses                        # Employee: own / Admin: all
 POST   /api/expenses                        # Employee: create draft
@@ -288,7 +288,7 @@ GET    /api/currencies/convert              # Proxy: exchangerate-api
 |---------|-------|-------|
 | `restcountries.com` | Country dropdown + base currency on signup | Called once at signup |
 | `exchangerate-api.com` | Real-time conversion in manager dashboard | Called per approvals page load |
-| **Resend** | All transactional emails | Server-side via Resend Node SDK |
+| **Nodemailer** | All transactional emails | Server-side via Nodemailer SMTP |
 | **Tesseract.js** | OCR receipt parsing | Fully client-side, zero API cost |
 | **Auth.js v5** | Sessions, credentials login, Prisma adapter | httpOnly cookies |
 
@@ -414,7 +414,7 @@ reimbursement-management-odoo/
 │   ├── prisma.ts                                 # Prisma client singleton
 │   ├── auth.ts                                   # Auth.js v5 config + session helpers
 │   ├── currency.ts                               # restcountries + exchangerate-api
-│   ├── mail.ts                                   # Resend client + all email templates
+│   ├── mail.ts                                   # Nodemailer client + all email templates
 │   ├── ocr.ts                                    # Tesseract.js wrapper + field parser
 │   ├── approval-engine.ts                        # Core workflow logic — Person C owns exclusively
 │   └── utils.ts                                  # cn(), formatCurrency(), formatDate()
@@ -459,7 +459,7 @@ reimbursement-management-odoo/
 | Area | Person A | Person B | Person C |
 |------|----------|----------|----------|
 | Auth.js v5 setup, login, signup | ✅ | | |
-| Forgot password + Resend setup (`lib/mail.ts`) | ✅ | | |
+| Forgot password + Nodemailer setup (`lib/mail.ts`) | ✅ | | |
 | Admin user management | ✅ | | |
 | Admin category management | ✅ | | |
 | Currency API proxy | ✅ setup | uses | uses |
@@ -485,7 +485,7 @@ reimbursement-management-odoo/
 1. Expense submitted in any currency → converted at live rate when shown to manager.
 2. **Is Manager Approver** checked → manager is always Step 1 before configured approvers.
 3. **Sequential ON** → each approver acts before the next is notified.
-4. **Required approver rejects** → expense auto-rejected immediately; chain stops; Resend fires.
+4. **Required approver rejects** → expense auto-rejected immediately; chain stops; Nodemailer fires.
 5. **Minimum Approval %** → auto-approves once threshold is met in parallel mode.
 6. Once submitted, expense is **read-only** for the employee.
 7. Once acted upon, manager row is **read-only** and action buttons disappear.
@@ -507,6 +507,11 @@ reimbursement-management-odoo/
 DATABASE_URL="file:./dev.db"
 NEXTAUTH_SECRET=""
 NEXTAUTH_URL="http://localhost:3000"
-RESEND_API_KEY=""
+SMTP_HOST="smtp.gmail.com"
+SMTP_PORT="587"
+SMTP_SECURE="false"
+SMTP_USER=""
+SMTP_PASS=""
+SMTP_FROM_EMAIL="Reimbursement <no-reply@example.com>"
 EXCHANGERATE_API_KEY=""          # optional if exchangerate-api free tier used without key
 ```

@@ -1,7 +1,70 @@
-import { Resend } from "resend";
+import nodemailer from "nodemailer";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-const FROM = "Reimbursement <noreply@reimbursement.app>";
+const FROM = process.env.SMTP_FROM_EMAIL ?? "Reimbursement <noreply@example.com>";
+
+export class MailDeliveryError extends Error {
+  code: "SMTP_CONFIG_MISSING" | "SMTP_SEND_FAILED";
+
+  constructor(
+    code: "SMTP_CONFIG_MISSING" | "SMTP_SEND_FAILED",
+    message: string
+  ) {
+    super(message);
+    this.name = "MailDeliveryError";
+    this.code = code;
+  }
+}
+
+type SendEmailInput = {
+  to: string | string[];
+  subject: string;
+  html: string;
+};
+
+function getTransporter(): nodemailer.Transporter {
+  const host = process.env.SMTP_HOST;
+  const portRaw = process.env.SMTP_PORT;
+  const user = process.env.SMTP_USER;
+  const pass = process.env.SMTP_PASS;
+
+  if (!host || !portRaw || !user || !pass) {
+    throw new MailDeliveryError(
+      "SMTP_CONFIG_MISSING",
+      "Missing SMTP configuration. Expected SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS."
+    );
+  }
+
+  const port = Number(portRaw);
+  if (!Number.isFinite(port)) {
+    throw new MailDeliveryError("SMTP_CONFIG_MISSING", "SMTP_PORT must be a valid number.");
+  }
+
+  const secureEnv = process.env.SMTP_SECURE;
+  const secure = secureEnv ? secureEnv === "true" : port === 465;
+
+  return nodemailer.createTransport({
+    host,
+    port,
+    secure,
+    auth: { user, pass },
+  });
+}
+
+async function sendEmailOrThrow(input: SendEmailInput): Promise<void> {
+  const transporter = getTransporter();
+
+  try {
+    await transporter.sendMail({
+      from: FROM,
+      to: Array.isArray(input.to) ? input.to.join(", ") : input.to,
+      subject: input.subject,
+      html: input.html,
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown SMTP send error";
+    throw new MailDeliveryError("SMTP_SEND_FAILED", `Nodemailer send failed: ${message}`);
+  }
+}
 
 /** App palette — mirrors globals.css for on-brand email rendering */
 const C = {
@@ -84,8 +147,7 @@ export async function sendLoginNotificationEmail(to: string, name: string): Prom
 <p style="margin:0 0 16px;">If this was you, you can ignore this email. If you don’t recognize this activity, change your password right away and tell your admin so they can help secure your workspace.</p>
 <p style="margin:0;">${badge("Security", C.accent, C.primary)}</p>`;
 
-  await resend.emails.send({
-    from: FROM,
+  await sendEmailOrThrow({
     to,
     subject: "Sign-in alert · Reimbursement",
     html: layoutEmail(inner),
@@ -104,8 +166,7 @@ export async function sendPasswordResetEmail(
 ${calloutPassword("Temporary password", pw)}
 <p style="margin:16px 0 0;font-size:13px;color:${C.muted};">For your security, don’t share this password or leave it in chat or email once you’ve logged in.</p>`;
 
-  await resend.emails.send({
-    from: FROM,
+  await sendEmailOrThrow({
     to,
     subject: "Your temporary Reimbursement password",
     html: layoutEmail(inner),
@@ -124,8 +185,7 @@ export async function sendNewUserPasswordEmail(
 ${calloutPassword("First-time sign-in password", pw)}
 <p style="margin:16px 0 0;font-size:13px;color:${C.muted};">After your first login you’ll be prompted to choose your own password. Quick tip: use the same email this invite was sent to when signing in.</p>`;
 
-  await resend.emails.send({
-    from: FROM,
+  await sendEmailOrThrow({
     to,
     subject: "Welcome to Reimbursement — your account is ready",
     html: layoutEmail(inner),
@@ -160,8 +220,7 @@ export async function sendExpenseSubmittedEmail(
 <p style="margin:0;">When you’re ready, open Reimbursement and work through your pending approvals—your decision keeps reimbursements moving for the team.</p>
 <p style="margin:18px 0 0;">${badge("Action required", C.accent, C.primary)}</p>`;
 
-    await resend.emails.send({
-      from: FROM,
+    await sendEmailOrThrow({
       to,
       subject: `Review needed: ${expenseTitle}`,
       html: layoutEmail(inner),
@@ -181,8 +240,7 @@ export async function sendExpenseApprovedEmail(
 <p style="margin:0;">Thanks for keeping your documentation sharp; it makes processing smoother for finance.</p>
 <p style="margin:18px 0 0;">${badge("Approved (step)", C.success, "rgba(76,175,124,0.12)")}</p>`;
 
-  await resend.emails.send({
-    from: FROM,
+  await sendEmailOrThrow({
     to,
     subject: `Expense approved: ${expenseTitle}`,
     html: layoutEmail(inner),
@@ -210,8 +268,7 @@ export async function sendExpenseRejectedEmail(
 </table>
 <p style="margin:0;">Review the comment above, update your claim if needed, and reach out to your approver if anything is unclear.</p>`;
 
-  await resend.emails.send({
-    from: FROM,
+  await sendEmailOrThrow({
     to,
     subject: `Update on your expense: ${expenseTitle}`,
     html: layoutEmail(inner),
@@ -230,8 +287,7 @@ export async function sendExpenseFinalApprovedEmail(
 <p style="margin:0;">You don’t need to do anything else for this claim unless your team asks for more paperwork. Nice work getting it across the line.</p>
 <p style="margin:18px 0 0;">${badge("Fully approved", C.success, "rgba(76,175,124,0.14)")}</p>`;
 
-  await resend.emails.send({
-    from: FROM,
+  await sendEmailOrThrow({
     to,
     subject: `All set for reimbursement: ${expenseTitle}`,
     html: layoutEmail(inner),

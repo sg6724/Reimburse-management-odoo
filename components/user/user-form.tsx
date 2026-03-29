@@ -33,8 +33,14 @@ export function UserForm({ managers, onSuccess, onCancel }: UserFormProps) {
     });
 
     if (!res.ok) {
-      const body = await res.json();
-      setError(body.error ?? "Failed to create user");
+      let message = "Failed to create user";
+      try {
+        const body = await res.json();
+        message = body.error ?? message;
+      } catch {
+        // Keep a safe fallback if backend returns a non-JSON error body.
+      }
+      setError(message);
       return;
     }
 
