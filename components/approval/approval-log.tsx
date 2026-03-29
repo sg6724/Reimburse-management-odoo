@@ -5,15 +5,20 @@ import { formatDate } from "@/lib/utils";
 
 export interface ApprovalLogEntry {
 	id: string;
-	approverName: string;
+	approverId: string;
+	approverName?: string;
 	status: "PENDING" | "APPROVED" | "REJECTED";
 	comment: string | null;
+	createdAt: string;
 	decidedAt: string | null;
 	isManagerApproval?: boolean;
+	approver?: { id: string; name: string };
 }
 
 interface ApprovalLogProps {
-	items: ApprovalLogEntry[];
+	// Accept either shape: Person A's `items` or Person B's `approvals`
+	items?: ApprovalLogEntry[];
+	approvals?: ApprovalLogEntry[];
 }
 
 function statusBadge(status: ApprovalLogEntry["status"]) {
@@ -22,8 +27,10 @@ function statusBadge(status: ApprovalLogEntry["status"]) {
 	return <Badge variant="warning">Pending</Badge>;
 }
 
-export function ApprovalLog({ items }: ApprovalLogProps) {
-	if (!items.length) {
+export function ApprovalLog({ items, approvals }: ApprovalLogProps) {
+	const entries = items ?? approvals ?? [];
+
+	if (!entries.length) {
 		return (
 			<div className="rounded-lg border border-border bg-white p-4 text-sm text-muted">
 				No approval history yet.
@@ -42,20 +49,22 @@ export function ApprovalLog({ items }: ApprovalLogProps) {
 				</tr>
 			</Thead>
 			<Tbody>
-				{items.map((item) => (
+				{entries.map((item) => (
 					<Tr key={item.id}>
 						<Td>
-							<div className="font-medium text-text">{item.approverName}</div>
+							<div className="font-medium text-text">
+								{item.approverName ?? item.approver?.name ?? "Unknown"}
+							</div>
 							{item.isManagerApproval ? (
 								<div className="text-xs text-muted">Manager step</div>
 							) : null}
 						</Td>
 						<Td>{statusBadge(item.status)}</Td>
 						<Td className="max-w-[320px] text-muted">
-							{item.comment?.trim() ? item.comment : "-"}
+							{item.comment?.trim() ? item.comment : "—"}
 						</Td>
 						<Td className="text-muted">
-							{item.decidedAt ? formatDate(item.decidedAt) : "-"}
+							{item.decidedAt ? formatDate(item.decidedAt) : "—"}
 						</Td>
 					</Tr>
 				))}
