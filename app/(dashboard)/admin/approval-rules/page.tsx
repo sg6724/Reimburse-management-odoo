@@ -38,14 +38,14 @@ export default function ApprovalRulesPage() {
   async function fetchData() {
     setLoading(true);
     setError(null);
-
     try {
-      const [rulesRes, usersRes] = await Promise.all([fetch("/api/approval-rules"), fetch("/api/users")]);
+      const [rulesRes, usersRes] = await Promise.all([
+        fetch("/api/approval-rules"),
+        fetch("/api/users"),
+      ]);
       const [rulesData, usersData] = await Promise.all([rulesRes.json(), usersRes.json()]);
-
       if (!rulesRes.ok) throw new Error(rulesData?.error ?? "Failed to fetch approval rules");
       if (!usersRes.ok) throw new Error(usersData?.error ?? "Failed to fetch users");
-
       setRules(rulesData);
       setUsers(usersData);
     } catch (err) {
@@ -67,12 +67,12 @@ export default function ApprovalRulesPage() {
     });
     const data = await response.json();
     if (!response.ok) throw new Error(data?.error ?? "Failed to create rule");
-
     setShowCreate(false);
     await fetchData();
   }
 
   async function handleActivate(ruleId: string, isActive: boolean) {
+    setError(null);
     const response = await fetch(`/api/approval-rules/${ruleId}/activate`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -87,6 +87,7 @@ export default function ApprovalRulesPage() {
   }
 
   async function handleDelete(ruleId: string) {
+    setError(null);
     const response = await fetch(`/api/approval-rules/${ruleId}`, { method: "DELETE" });
     const data = await response.json();
     if (!response.ok) {
@@ -107,6 +108,10 @@ export default function ApprovalRulesPage() {
 
       {loading ? (
         <p className="text-sm text-muted">Loading rules...</p>
+      ) : rules.length === 0 ? (
+        <div className="rounded-lg border border-border bg-white p-6 text-sm text-muted">
+          No approval rules yet. Create one to get started.
+        </div>
       ) : (
         <Table>
           <Thead>
@@ -123,7 +128,10 @@ export default function ApprovalRulesPage() {
             {rules.map((rule) => (
               <Tr key={rule.id}>
                 <Td>
-                  <Link className="font-medium hover:underline" href={`/admin/approval-rules/${rule.id}`}>
+                  <Link
+                    className="font-medium hover:underline"
+                    href={`/admin/approval-rules/${rule.id}`}
+                  >
                     {rule.name}
                   </Link>
                 </Td>
@@ -152,7 +160,13 @@ export default function ApprovalRulesPage() {
                         Activate
                       </Button>
                     )}
-                    <Button size="sm" variant="danger" onClick={() => handleDelete(rule.id)}>
+                    <Button
+                      size="sm"
+                      variant="danger"
+                      onClick={() => handleDelete(rule.id)}
+                      disabled={rule.isActive}
+                      title={rule.isActive ? "Deactivate before deleting" : "Delete rule"}
+                    >
                       Delete
                     </Button>
                   </div>

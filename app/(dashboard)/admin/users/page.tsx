@@ -8,34 +8,10 @@ import { useUsers } from "@/hooks/use-users";
 export default function UsersPage() {
   const { users, loading, refetch } = useUsers();
   const [showForm, setShowForm] = useState(false);
-  const [actionError, setActionError] = useState<string>();
-  const [actionSuccess, setActionSuccess] = useState<string>();
-  const [sendingPasswordUserId, setSendingPasswordUserId] = useState<string | null>(null);
 
   async function handleSendPassword(userId: string) {
-    setActionError(undefined);
-    setActionSuccess(undefined);
-    setSendingPasswordUserId(userId);
-
-    try {
-      const res = await fetch(`/api/users/${userId}/send-password`, { method: "POST" });
-
-      if (!res.ok) {
-        let message = "Failed to send password email.";
-        try {
-          const body = await res.json();
-          message = body.error ?? message;
-        } catch {
-          // Keep a safe fallback when response is not JSON.
-        }
-        setActionError(message);
-        return;
-      }
-
-      setActionSuccess("Password email sent successfully.");
-    } finally {
-      setSendingPasswordUserId(null);
-    }
+    await fetch(`/api/users/${userId}/send-password`, { method: "POST" });
+    alert("Password sent!");
   }
 
   async function handleUpdateRole(userId: string, role: "MANAGER" | "EMPLOYEE") {
@@ -68,13 +44,9 @@ export default function UsersPage() {
       <UserTable
         users={users}
         onSendPassword={handleSendPassword}
-        sendingPasswordUserId={sendingPasswordUserId}
         onUpdateRole={handleUpdateRole}
         onUpdateManager={handleUpdateManager}
       />
-
-      {actionError && <p className="text-sm text-[#E05252]">{actionError}</p>}
-      {actionSuccess && <p className="text-sm text-[#4CAF7C]">{actionSuccess}</p>}
 
       <Modal
         open={showForm}

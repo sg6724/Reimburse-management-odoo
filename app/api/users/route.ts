@@ -1,8 +1,8 @@
 import { auth } from "@/lib/auth";
-import { MailDeliveryError, sendNewUserPasswordEmail } from "@/lib/mail";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
+import { sendNewUserPasswordEmail } from "@/lib/mail";
 
 function generateTempPassword(): string {
   const chars = "ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
@@ -56,58 +56,19 @@ export async function POST(request: Request) {
   const tempPassword = generateTempPassword();
   const passwordHash = await bcrypt.hash(tempPassword, 12);
 
-  try {
-    const newUser = await prisma.user.create({
-      data: {
-        companyId: admin.companyId,
-        name,
-        email,
-        passwordHash,
-        role,
-        managerId: managerId ?? null,
-        mustChangePassword: true,
-      },
-    });
+  const newUser = await prisma.user.create({
+    data: {
+      companyId: admin.companyId,
+      name,
+      email,
+      passwordHash,
+      role,
+      managerId: managerId ?? null,
+      mustChangePassword: true,
+    },
+  });
 
-    try {
-      await sendNewUserPasswordEmail(email, name, tempPassword);
-    } catch (error) {
-      await prisma.user.delete({ where: { id: newUser.id } });
+  await sendNewUserPasswordEmail(email, name, tempPassword);
 
-      if (error instanceof MailDeliveryError) {
-        if (error.code === "SMTP_CONFIG_MISSING") {
-          return Response.json(
-            {
-              error:
-                "User was not created because email configuration is incomplete. Set SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, and SMTP_FROM_EMAIL.",
-            },
-            { status: 500 }
-          );
-        }
-
-        return Response.json(
-          { error: "User was not created because welcome email could not be sent via SMTP." },
-          { status: 502 }
-        );
-      }
-
-      return Response.json(
-        { error: "User was not created because welcome email could not be sent." },
-        { status: 502 }
-      );
-    }
-
-    return Response.json(newUser, { status: 201 });
-  } catch (error: unknown) {
-    if (
-      typeof error === "object" &&
-      error !== null &&
-      "code" in error &&
-      (error as { code?: string }).code === "P2002"
-    ) {
-      return Response.json({ error: "Email already in use" }, { status: 409 });
-    }
-
-    return Response.json({ error: "Failed to create user" }, { status: 500 });
-  }
+  return Response.json(newUser, { status: 201 });
 }
