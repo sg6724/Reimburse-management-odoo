@@ -14,21 +14,7 @@ export default function CategoriesPage() {
   }
 
   useEffect(() => {
-    let canceled = false;
-
-    async function loadInitialCategories() {
-      const res = await fetch("/api/categories");
-      const data = await res.json();
-      if (!canceled) {
-        setCategories(data);
-      }
-    }
-
-    void loadInitialCategories();
-
-    return () => {
-      canceled = true;
-    };
+    fetchCategories();
   }, []);
 
   async function handleAdd() {

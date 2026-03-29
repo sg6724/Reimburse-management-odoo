@@ -33,8 +33,9 @@ export async function POST(
 
 	const updated = await prisma.$transaction(async (tx) => {
 		if (parsed.data.isActive) {
+			// Deactivate every other rule in the company first (one active rule at a time)
 			await tx.approvalWorkflow.updateMany({
-				where: { companyId: user.companyId, isActive: true },
+				where: { companyId: user.companyId, isActive: true, NOT: { id } },
 				data: { isActive: false },
 			});
 		}

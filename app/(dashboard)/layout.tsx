@@ -16,7 +16,7 @@ export default async function DashboardLayout({
     include: { company: true },
   });
 
-  if (user.mustChangePassword) redirect("/change-password");
+  if (user.mustChangePassword) redirect("/forgot-password");
 
   return (
     <DashboardShell

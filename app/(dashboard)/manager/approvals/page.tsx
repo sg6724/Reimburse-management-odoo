@@ -7,7 +7,7 @@ import { Button, Dropdown } from "@/components/ui";
 import { useApprovals } from "@/hooks/use-approvals";
 
 export default function ApprovalsPage() {
-  const { approvals, loading, error, approve, reject } = useApprovals();
+  const { approvals, loading, error, approve, reject, refetch } = useApprovals();
   const [rejectTarget, setRejectTarget] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
   const [decisionError, setDecisionError] = useState<string | null>(null);
@@ -32,7 +32,6 @@ export default function ApprovalsPage() {
 
   async function handleReject(comment: string) {
     if (!rejectTarget) return;
-
     setDecisionError(null);
     setActionLoading(true);
     try {
@@ -61,7 +60,7 @@ export default function ApprovalsPage() {
             onChange={(e) => setFilter(e.target.value as typeof filter)}
             className="w-40"
           />
-          <Button variant="secondary" onClick={() => window.location.reload()}>
+          <Button variant="secondary" onClick={refetch}>
             Refresh
           </Button>
         </div>

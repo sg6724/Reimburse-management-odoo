@@ -4,8 +4,7 @@ import type { UserWithManager } from "@/types";
 
 interface UserTableProps {
   users: UserWithManager[];
-  onSendPassword: (userId: string) => Promise<void>;
-  sendingPasswordUserId: string | null;
+  onSendPassword: (userId: string) => void;
   onUpdateRole: (userId: string, role: "MANAGER" | "EMPLOYEE") => void;
   onUpdateManager: (userId: string, managerId: string | null) => void;
 }
@@ -13,7 +12,6 @@ interface UserTableProps {
 export function UserTable({
   users,
   onSendPassword,
-  sendingPasswordUserId,
   onUpdateRole,
   onUpdateManager,
 }: UserTableProps) {
@@ -75,10 +73,9 @@ export function UserTable({
                 <Button
                   size="sm"
                   variant="secondary"
-                  disabled={sendingPasswordUserId === user.id}
                   onClick={() => onSendPassword(user.id)}
                 >
-                  {sendingPasswordUserId === user.id ? "Sending..." : "Send Password"}
+                  Send Password
                 </Button>
               )}
             </Td>
