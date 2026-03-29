@@ -172,6 +172,13 @@ export async function DELETE(
 		);
 	}
 
-	await prisma.approvalWorkflow.delete({ where: { id } });
-	return Response.json({ ok: true });
+	try {
+		// Steps must be deleted before the workflow due to FK constraint
+		await prisma.approvalWorkflowStep.deleteMany({ where: { workflowId: id } });
+		await prisma.approvalWorkflow.delete({ where: { id } });
+		return Response.json({ ok: true });
+	} catch (error) {
+		const message = error instanceof Error ? error.message : "Failed to delete rule";
+		return Response.json({ error: message }, { status: 500 });
+	}
 }
