@@ -58,9 +58,16 @@ export function ApprovalTable({ approvals, onApprove, onReject }: ApprovalTableP
 						<Td>{item.expense.category.name}</Td>
 						<Td>{expenseStatusBadge(item.expense.status)}</Td>
 						<Td>
-							{formatCurrency(
-								item.expense.amountInCompanyCurrency,
-								item.expense.company.currencyCode
+							{item.expense.currencyCode !== item.expense.company.currencyCode ? (
+								<span>
+									{formatCurrency(item.expense.amount, item.expense.currencyCode)}
+									{" (in "}
+									{item.expense.company.currencyCode}
+									{") = "}
+									{formatCurrency(item.expense.amountInCompanyCurrency, item.expense.company.currencyCode)}
+								</span>
+							) : (
+								formatCurrency(item.expense.amountInCompanyCurrency, item.expense.company.currencyCode)
 							)}
 						</Td>
 						<Td>{decisionBadge(item.status)}</Td>

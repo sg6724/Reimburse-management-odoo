@@ -21,6 +21,16 @@ export interface ApprovalQueueItem {
 		employee: { id: string; name: string; email: string };
 		category: { id: string; name: string };
 		company: { currencyCode: string };
+		approvals: Array<{
+			id: string;
+			approverId: string;
+			status: "PENDING" | "APPROVED" | "REJECTED";
+			isManagerApproval: boolean;
+			workflowStepId: string | null;
+			comment: string | null;
+			decidedAt: string | null;
+			approver: { id: string; name: string };
+		}>;
 	};
 }
 
