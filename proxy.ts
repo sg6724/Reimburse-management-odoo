@@ -3,6 +3,7 @@ import { getToken } from "next-auth/jwt";
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const expiredSession = request.nextUrl.searchParams.get("expired") === "1";
   const authSecret = process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET;
   const token = await getToken({ req: request, secret: authSecret });
   const isLoggedIn = !!token;
@@ -14,7 +15,7 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
-  if (isLoggedIn && isPublic) {
+  if (isLoggedIn && isPublic && !expiredSession) {
     const role = token?.role as string | undefined;
     const redirectMap: Record<string, string> = {
       ADMIN: "/admin/users",

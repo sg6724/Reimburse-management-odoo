@@ -2,9 +2,13 @@
 // Purpose: Dev reset data. Person C adds seedApprovalRules() below.
 
 import { PrismaClient } from "@prisma/client";
+import { PrismaLibSql } from "@prisma/adapter-libsql";
 import bcrypt from "bcryptjs";
 
-const prisma = new PrismaClient();
+const url = process.env.DATABASE_URL ?? "file:./dev.db";
+const libsqlUrl = url.replace(/^file:\.\//, "file:");
+const adapter = new PrismaLibSql({ url: libsqlUrl });
+const prisma = new PrismaClient({ adapter });
 
 async function seedCompany() {
   const company = await prisma.company.upsert({
