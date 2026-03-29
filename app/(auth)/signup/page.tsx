@@ -13,6 +13,8 @@ export default function SignupPage() {
   const [countries, setCountries] = useState<CountryOption[]>([]);
   const [error, setError] = useState<string>();
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -33,6 +35,15 @@ export default function SignupPage() {
     setError(undefined);
     setLoading(true);
     const data = new FormData(e.currentTarget);
+    const password = String(data.get("password") ?? "");
+    const confirmPassword = String(data.get("confirmPassword") ?? "");
+
+    if (password !== confirmPassword) {
+      setError("Password and confirm password must match.");
+      setLoading(false);
+      return;
+    }
+
     const countryVal = data.get("country") as string;
     const [currencyCode, countryName] = countryVal.split("__");
 
@@ -42,7 +53,7 @@ export default function SignupPage() {
       body: JSON.stringify({
         name: data.get("name"),
         email: data.get("email"),
-        password: data.get("password"),
+        password,
         companyName: data.get("companyName"),
         country: countryName,
         currencyCode,
@@ -63,7 +74,7 @@ export default function SignupPage() {
     <div className="min-h-screen flex items-center justify-center bg-[#F8F9ED]">
       <div className="w-full max-w-md rounded-xl bg-white p-8 shadow-sm border border-[#E2E4D8]">
         <h1 className="text-2xl font-semibold text-[#1A1A2E] mb-2">Create your company</h1>
-        <p className="text-sm text-[#6B7280] mb-6">You'll be the Admin for your company.</p>
+        <p className="text-sm text-[#6B7280] mb-6">You will be the Admin for your company.</p>
         <form onSubmit={handleSubmit} className="space-y-4">
           <Input id="companyName" name="companyName" label="Company Name" required />
           <Dropdown
@@ -79,10 +90,36 @@ export default function SignupPage() {
           <Input
             id="password"
             name="password"
-            type="password"
+            type={showPassword ? "text" : "password"}
             label="Password"
             minLength={8}
             required
+            rightElement={
+              <button
+                type="button"
+                className="text-xs text-[#5E4075] hover:underline"
+                onClick={() => setShowPassword((prev) => !prev)}
+              >
+                {showPassword ? "Hide" : "Show"}
+              </button>
+            }
+          />
+          <Input
+            id="confirmPassword"
+            name="confirmPassword"
+            type={showConfirmPassword ? "text" : "password"}
+            label="Confirm Password"
+            minLength={8}
+            required
+            rightElement={
+              <button
+                type="button"
+                className="text-xs text-[#5E4075] hover:underline"
+                onClick={() => setShowConfirmPassword((prev) => !prev)}
+              >
+                {showConfirmPassword ? "Hide" : "Show"}
+              </button>
+            }
           />
           {error && <p className="text-sm text-[#E05252]">{error}</p>}
           <Button type="submit" className="w-full" disabled={loading}>
