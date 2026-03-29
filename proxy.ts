@@ -1,31 +1,33 @@
-import { auth } from "@/lib/auth";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { getToken } from "next-auth/jwt";
 
-export default auth((req) => {
-  const { pathname } = req.nextUrl;
-  const isLoggedIn = !!req.auth;
+export async function proxy(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+  const token = await getToken({ req: request, secret: process.env.AUTH_SECRET });
+  const isLoggedIn = !!token;
 
   const publicPaths = ["/login", "/signup", "/forgot-password"];
   const isPublic = publicPaths.some((p) => pathname.startsWith(p));
 
   if (!isLoggedIn && !isPublic) {
-    return NextResponse.redirect(new URL("/login", req.url));
+    return NextResponse.redirect(new URL("/login", request.url));
   }
 
   if (isLoggedIn && isPublic) {
-    const role = (req.auth?.user as any)?.role;
+    const role = token?.role as string | undefined;
     const redirectMap: Record<string, string> = {
       ADMIN: "/admin/users",
       MANAGER: "/manager/approvals",
       EMPLOYEE: "/employee/expenses",
     };
+
     return NextResponse.redirect(
-      new URL(redirectMap[role] ?? "/admin/users", req.url)
+      new URL(redirectMap[role ?? ""] ?? "/admin/users", request.url)
     );
   }
 
   return NextResponse.next();
-});
+}
 
 export const config = {
   matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
