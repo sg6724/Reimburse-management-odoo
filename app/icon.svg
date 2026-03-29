@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none">
+  <!-- Background circle -->
+  <circle cx="16" cy="16" r="16" fill="#2563EB"/>
+  <!-- Receipt body -->
+  <rect x="9" y="7" width="14" height="18" rx="2" fill="white"/>
+  <!-- Zigzag bottom cut -->
+  <polyline points="9,25 11,23 13,25 15,23 17,25 19,23 21,25 23,23 23,25" fill="#2563EB" stroke="none"/>
+  <!-- Lines on receipt -->
+  <rect x="11.5" y="10" width="9" height="1.5" rx="0.75" fill="#BFDBFE"/>
+  <rect x="11.5" y="13" width="6" height="1.5" rx="0.75" fill="#BFDBFE"/>
+  <rect x="11.5" y="16" width="7.5" height="1.5" rx="0.75" fill="#BFDBFE"/>
+  <!-- Checkmark overlay badge -->
+  <circle cx="22" cy="22" r="6" fill="#16A34A"/>
+  <polyline points="19,22 21,24 25,20" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+</svg>
