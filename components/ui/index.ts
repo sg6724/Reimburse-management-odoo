@@ -1,3 +1,6 @@
-// Owner: Person A — barrel export for all UI primitives
-// TODO: export all components once implemented
-export {};
+export { Button } from "./button";
+export { Input } from "./input";
+export { Badge } from "./badge";
+export { Modal } from "./modal";
+export { Table, Thead, Tbody, Th, Td, Tr } from "./table";
+export { Dropdown } from "./dropdown";

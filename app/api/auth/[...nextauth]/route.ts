@@ -1,3 +1,2 @@
-// Owner: Person A
-// TODO: implement NextAuth route handler with credentials and session config
-export {};
+import { handlers } from "@/lib/auth";
+export const { GET, POST } = handlers;

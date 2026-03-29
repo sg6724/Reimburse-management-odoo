@@ -1,3 +1,6 @@
 // Owner: Person C
 // TODO: implement admin approval rules listing page
-export {};
+
+export default function ApprovalRulesPage() {
+  return <div>Coming soon</div>;
+}

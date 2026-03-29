@@ -1,3 +1,3 @@
-// Owner: Shared — lock interfaces in Week 1, no unilateral changes after
-// TODO: barrel export all types
-export {};
+export * from "./user";
+export * from "./expense";
+export * from "./approval";
