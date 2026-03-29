@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "RefundFlow — Reimbursement Management",
+  title: "RefundFlow - Reimbursement Management",
   description: "Digitize and streamline employee expense reimbursements with role-based approval workflows.",
 };
 
