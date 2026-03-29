@@ -280,12 +280,10 @@ export async function getManagerApprovals(managerId: string, companyId: string) 
 					company: { select: { currencyCode: true } },
 					workflow: { include: { steps: true } },
 					approvals: {
-						select: {
-							id: true,
-							status: true,
-							isManagerApproval: true,
-							workflowStepId: true,
+						include: {
+							approver: { select: { id: true, name: true } },
 						},
+						orderBy: { createdAt: "asc" as const },
 					},
 				},
 			},

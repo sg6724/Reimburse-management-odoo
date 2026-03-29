@@ -88,9 +88,16 @@ export default function ApprovalDetailPage() {
         <div>
           <p className="text-xs text-muted">Total Amount (Base Currency)</p>
           <p className="text-sm text-text">
-            {formatCurrency(
-              current.expense.amountInCompanyCurrency,
-              current.expense.company.currencyCode
+            {current.expense.currencyCode !== current.expense.company.currencyCode ? (
+              <span>
+                {formatCurrency(current.expense.amount, current.expense.currencyCode)}
+                {" (in "}
+                {current.expense.company.currencyCode}
+                {") = "}
+                {formatCurrency(current.expense.amountInCompanyCurrency, current.expense.company.currencyCode)}
+              </span>
+            ) : (
+              formatCurrency(current.expense.amountInCompanyCurrency, current.expense.company.currencyCode)
             )}
           </p>
         </div>
@@ -122,16 +129,14 @@ export default function ApprovalDetailPage() {
       <div className="space-y-2">
         <h2 className="text-lg font-semibold text-text">Approval Log</h2>
         <ApprovalLog
-          items={approvals
-            .filter((item) => item.expense.id === current.expense.id)
-            .map((item) => ({
-              id: item.id,
-              approverName: item.approver.name,
-              status: item.status,
-              comment: item.comment,
-              decidedAt: item.decidedAt,
-              isManagerApproval: item.isManagerApproval,
-            }))}
+          items={current.expense.approvals.map((a) => ({
+            id: a.id,
+            approverName: a.approver.name,
+            status: a.status,
+            comment: a.comment,
+            decidedAt: a.decidedAt,
+            isManagerApproval: a.isManagerApproval,
+          }))}
         />
       </div>
 
