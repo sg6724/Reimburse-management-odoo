@@ -89,7 +89,7 @@ export default function ApprovalRulesPage() {
   async function handleDelete(ruleId: string) {
     setError(null);
     const response = await fetch(`/api/approval-rules/${ruleId}`, { method: "DELETE" });
-    const data = await response.json();
+    const data = await response.json().catch(() => ({}));
     if (!response.ok) {
       setError(data?.error ?? "Failed to delete rule");
       return;
