@@ -73,15 +73,71 @@ async function seedCompany() {
   return company;
 }
 
-// Person C: Add your seedApprovalRules(companyId) function here
-// export async function seedApprovalRules(companyId: string) { ... }
+async function seedApprovalRules(companyId: string) {
+  // Create a dedicated finance user for Rule 2
+  const financeHash = await bcrypt.hash("finance123", 12);
+  const financeUser = await prisma.user.upsert({
+    where: { email: "finance@acme.com" },
+    update: {},
+    create: {
+      companyId,
+      name: "Finance Approver",
+      email: "finance@acme.com",
+      passwordHash: financeHash,
+      role: "MANAGER",
+    },
+  });
+
+  // Rule 1: Simple Manager Approval — active by default
+  await prisma.approvalWorkflow.upsert({
+    where: { id: "seed-rule-simple" },
+    update: {},
+    create: {
+      id: "seed-rule-simple",
+      companyId,
+      name: "Simple Manager Approval",
+      isActive: true,
+      isSequential: false,
+      managerApproverFirst: true,
+      ruleType: "ALL",
+    },
+  });
+
+  // Rule 2: Finance + Manager — sequential, finance user as required approver
+  const financeRule = await prisma.approvalWorkflow.upsert({
+    where: { id: "seed-rule-finance" },
+    update: {},
+    create: {
+      id: "seed-rule-finance",
+      companyId,
+      name: "Finance + Manager",
+      isActive: false,
+      isSequential: true,
+      managerApproverFirst: true,
+      ruleType: "SPECIFIC_APPROVER",
+      specificApproverId: financeUser.id,
+    },
+  });
+
+  await prisma.approvalWorkflowStep.upsert({
+    where: { id: "seed-step-finance" },
+    update: {},
+    create: {
+      id: "seed-step-finance",
+      workflowId: financeRule.id,
+      stepOrder: 1,
+      approverId: financeUser.id,
+      label: "Finance Approval",
+    },
+  });
+}
 
 async function main() {
   console.log("Seeding database...");
-  await seedCompany();
+  const company = await seedCompany();
   console.log("Seeded company + users + categories");
-
-  // Person C calls: await seedApprovalRules(company.id);
+  await seedApprovalRules(company.id);
+  console.log("Seeded approval rules");
 }
 
 main()
