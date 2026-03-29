@@ -5,11 +5,11 @@ import { formatDate } from "@/lib/utils";
 
 export interface ApprovalLogEntry {
 	id: string;
-	approverId: string;
+	approverId?: string;
 	approverName?: string;
 	status: "PENDING" | "APPROVED" | "REJECTED";
 	comment: string | null;
-	createdAt: string;
+	createdAt?: string;
 	decidedAt: string | null;
 	isManagerApproval?: boolean;
 	approver?: { id: string; name: string };
